@@ -78,6 +78,15 @@ class Crawler
 
   def process_request(request)
 
+    # Skip nil URLs
+    if request[:url].nil?
+      puts "WARNING: Skipping nil URL"
+      return request, []
+    end
+
+    # Skip mailtos
+    return request, [] if request[:url].match("^mailto:")
+
     # Invoke the appropriate request method (eg. get, post)
     method(request[:method]).call request[:url]
 
