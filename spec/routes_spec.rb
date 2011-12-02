@@ -1,11 +1,12 @@
 require File.dirname(__FILE__) + '/../lib/crawler'
  
 describe "Crawler" do
-  RAILS_PATH = File.dirname(__FILE__) + '/../priv/test-app'
+  RAILS_PATH = File.dirname(__FILE__) + '/../priv/CarApp'
 
   before(:each) do
     @crawler = Crawler.new
     @crawler.load_app RAILS_PATH
+    Car.delete_all
     @crawler.process "/index.html"
   end
   
@@ -27,12 +28,12 @@ describe "Crawler" do
   
   it "should have the correct response code" do
     found = 0
-    
+
     @crawler.results.each do |r|
       if r[:url] == '/deadlink'
         r[:status].should == 404
         found += 1
-      elsif ['/cars'].include? r[:url]
+      elsif r[:url] == '/cars' and r[:method].to_s == 'get'
         r[:status].should == 200
         found += 1
       end
@@ -79,15 +80,15 @@ describe "Crawler" do
     end
     
     it "should have a list of dead pages" do
-      @crawler.routes[:not_found].length.should == 1
-    end      
+      @crawler.routes[:not_found].should have_at_least(1).items
+    end
     
     it "should discover unused routes" do
       matched = false
-      @crawler.routes.each_pair do |route,urls|
+      @crawler.routes.each_pair do |route,request_array|
         if route.to_s =~ /cars/ and route.to_s =~ /show/
           matched = true
-          urls.should be(:empty)
+          request_array.should be_empty
         end          
       end
       
